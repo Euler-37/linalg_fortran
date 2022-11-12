@@ -1,6 +1,24 @@
+#ifdef REAL32
+#define dgetrf sgetrf
+#define dgetri sgetri
+#define dgemm sgemm
+#define dsyev ssyev
+#define zgetrf cgetrf
+#define zgetri cgetri
+#define zgemm cgemm
+#define zheev cheev
+#endif
 module iso_linalg_mod
+
+   use, intrinsic :: iso_fortran_env, only: &
+#ifdef REAL32
+   rk => real32
+#else
+   rk => real64
+#endif
    implicit none
    private
+   public :: rk
    type::linalg_t
    contains
       generic::inv   => linalg_zinv  ,linalg_dinv
@@ -29,26 +47,26 @@ module iso_linalg_mod
       procedure,private,nopass::linalg_dequal
    end type linalg_t
    type(linalg_t),public::linalg
-   complex(8),parameter::cone =cmplx(1.d0,0.d0,8)
-   complex(8),parameter::czero=cmplx(0.d0,0.d0,8)
-   real(8)   ,parameter::eps=1.0d-12
+   complex(rk),parameter::cone =cmplx(1.0_rk,0.0_rk,rk)
+   complex(rk),parameter::czero=cmplx(0.0_rk,0.0_rk,rk)
+   real(rk)   ,parameter::eps=1.0d-12
 contains
    logical function linalg_zequal(a,b)result(res)
       !! Matrix A == B
-      complex(8),intent(in)::a(:,:)
-      complex(8),intent(in)::b(:,:)
+      complex(rk),intent(in)::a(:,:)
+      complex(rk),intent(in)::b(:,:)
       res=all(abs(a-b)<eps)
    end function linalg_zequal
    logical function linalg_dequal(a,b)result(res)
       !! Matrix A == B
-      real(8),intent(in)::a(:,:)
-      real(8),intent(in)::b(:,:)
+      real(rk),intent(in)::a(:,:)
+      real(rk),intent(in)::b(:,:)
       res=all(abs(a-b)<eps)
    end function linalg_dequal
 
    subroutine linalg_zprint(a,name)
       !! Print Matrix A
-      complex(8),intent(in) :: a(:,:)
+      complex(rk),intent(in) :: a(:,:)
       character(len=*),intent(in)::name
       integer::n,i
       write(*,"(3A)")"matrix ",name,"="
@@ -60,7 +78,7 @@ contains
 
    subroutine linalg_dprint(a,name)
       !! Print Matrix A
-      real(8),intent(in) :: a(:,:)
+      real(rk),intent(in) :: a(:,:)
       character(len=*),intent(in)::name
       integer::n,i
       write(*,"(3A)")"matrix ",name,"="
@@ -72,29 +90,29 @@ contains
 
    subroutine linalg_zeye(a)
       !! Eye Matrix
-      complex(8),intent(inout) :: a(:,:)
+      complex(rk),intent(inout) :: a(:,:)
       integer::n,i
       n=size(a,1)
       do i=1,n
-         a(i,i)=1.d0
+         a(i,i)=1.0_rk
       end do
    end subroutine linalg_zeye
    subroutine linalg_deye(a)
       !! Eye Matrix
-      real(8),intent(inout) :: a(:,:)
+      real(rk),intent(inout) :: a(:,:)
       integer::n,i
       n=size(a,1)
       do i=1,n
-         a(i,i)=1.d0
+         a(i,i)=1.0_rk
       end do
    end subroutine linalg_deye
 
    logical function linalg_zinv(a)result(res)
       !! inverse of matrix a
-      complex(8),intent(inout) :: a(:,:)
+      complex(rk),intent(inout) :: a(:,:)
       integer                  :: info
       integer,allocatable      :: ipiv(:)
-      complex(8),allocatable   :: work(:)
+      complex(rk),allocatable   :: work(:)
       integer::n,i
       n=size(a,1)
       allocate(ipiv(n))
@@ -115,10 +133,10 @@ contains
    end function linalg_zinv
    logical function linalg_dinv(a)result(res)
       !! inverse of matrix a
-      real(8),intent(inout) :: a(:,:)
+      real(rk),intent(inout) :: a(:,:)
       integer               :: info
       integer,allocatable   :: ipiv(:)
-      real(8),allocatable   :: work(:)
+      real(rk),allocatable   :: work(:)
       integer::n,i
       n=size(a,1)
       allocate(ipiv(n))
@@ -138,21 +156,21 @@ contains
       deallocate(ipiv)
    end function linalg_dinv
 
-   complex(8) function linalg_zdet(a)result(res)
+   complex(rk) function linalg_zdet(a)result(res)
       !! Determinant of matrix a
-      complex(8),intent(in)    :: a(:,:)
+      complex(rk),intent(in)    :: a(:,:)
       integer                  :: info
       integer,allocatable      :: ipiv(:)
       integer::n,i
-      complex(8),allocatable:: tmpa(:,:)
+      complex(rk),allocatable:: tmpa(:,:)
       n=size(a,1)
       allocate(tmpa,source=a)
       allocate(ipiv(n))
       call zgetrf(n,n,tmpa,n,ipiv,info)
       if(info/=0)then
-         res=0.d0
+         res=0.0_rk
       else
-         res=1.d0
+         res=1.0_rk
          do i=1,n
             res=res*tmpa(i,i)*merge(1,-1,ipiv(i)==i)
          end do
@@ -160,21 +178,21 @@ contains
       deallocate(ipiv)
       deallocate(tmpa)
    end function linalg_zdet
-   complex(8) function linalg_ddet(a)result(res)
+   complex(rk) function linalg_ddet(a)result(res)
       !! Determinant of matrix a
-      real(8),intent(in) :: a(:,:)
+      real(rk),intent(in) :: a(:,:)
       integer               :: info
       integer,allocatable   :: ipiv(:)
       integer::n,i
-      real(8),allocatable::tmpa(:,:)
+      real(rk),allocatable::tmpa(:,:)
       n=size(a,1)
       allocate(tmpa,source=a)
       allocate(ipiv(n))
       call dgetrf(n,n,tmpa,n,ipiv,info)
       if(info/=0)then
-         res=0.d0
+         res=0.0_rk
       else
-         res=1.d0
+         res=1.0_rk
          do i=1,n
             res=res*tmpa(i,i)*merge(1,-1,ipiv(i)==i)
          end do
@@ -185,10 +203,10 @@ contains
 
    subroutine linalg_zeigh(a,e)
       !! call zheev "V","U"
-      complex(8),intent(inout) :: a(:,:)
-      real(8),intent(out)      :: e(:)
-      complex(8),allocatable   :: work(:)
-      real(8),allocatable      :: rwork(:)
+      complex(rk),intent(inout) :: a(:,:)
+      real(rk),intent(out)      :: e(:)
+      complex(rk),allocatable   :: work(:)
+      real(rk),allocatable      :: rwork(:)
       integer                  :: iflag
       integer::n
       n=size(a,1)
@@ -200,9 +218,9 @@ contains
    end subroutine linalg_zeigh
    subroutine linalg_deigh(a,e)
       !! call dsyev  "V","U"
-      real(8),intent(inout) :: a(:,:)
-      real(8),intent(out)   :: e(:)
-      real(8),allocatable   :: work(:)
+      real(rk),intent(inout) :: a(:,:)
+      real(rk),intent(out)   :: e(:)
+      real(rk),allocatable   :: work(:)
       integer               :: iflag
       integer::n
       n=size(a,1)
@@ -220,11 +238,11 @@ contains
       implicit none
       character(len=1), intent(in):: transa
       character(len=1), intent(in):: transb
-      complex(8), intent(in) :: alpha
-      complex(8), intent(in) :: beta
-      complex(8), intent(in) :: a(:,:)
-      complex(8), intent(in) :: b(:,:)
-      complex(8), intent(inout) :: c(:,:)
+      complex(rk), intent(in) :: alpha
+      complex(rk), intent(in) :: beta
+      complex(rk), intent(in) :: a(:,:)
+      complex(rk), intent(in) :: b(:,:)
+      complex(rk), intent(inout) :: c(:,:)
       integer :: m,n,k,lda,ldb,ldc
       if((transa=='n'.or.transa=='N')) then
          k = size(a,2)
@@ -247,11 +265,11 @@ contains
       implicit none
       character(len=1), intent(in):: transa
       character(len=1), intent(in):: transb
-      real(8), intent(in) :: beta
-      real(8), intent(in) :: alpha
-      real(8), intent(in) :: a(:,:)
-      real(8), intent(in) :: b(:,:)
-      real(8), intent(inout) :: c(:,:)
+      real(rk), intent(in) :: beta
+      real(rk), intent(in) :: alpha
+      real(rk), intent(in) :: a(:,:)
+      real(rk), intent(in) :: b(:,:)
+      real(rk), intent(inout) :: c(:,:)
       integer :: m,n,k,lda,ldb,ldc
       if((transa=='n'.or.transa=='N')) then
          k = size(a,2)
@@ -271,9 +289,9 @@ contains
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
       integer,intent(in)::itype
-      complex(8),intent(in)::a(:,:)
-      complex(8),intent(inout)::b(:,:)
-      complex(8),allocatable::c(:,:)
+      complex(rk),intent(in)::a(:,:)
+      complex(rk),intent(inout)::b(:,:)
+      complex(rk),allocatable::c(:,:)
       allocate(c,mold=a)
       if(itype==1)then
          call linalg%gemm(a, b, c, 'C', 'N', cone, czero)
@@ -290,16 +308,16 @@ contains
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
       integer,intent(in)::itype
-      real(8),intent(in)::a(:,:)
-      real(8),intent(inout)::b(:,:)
-      real(8),allocatable::c(:,:)
+      real(rk),intent(in)::a(:,:)
+      real(rk),intent(inout)::b(:,:)
+      real(rk),allocatable::c(:,:)
       allocate(c,mold=a)
       if(itype==1)then
-         call linalg%gemm(a, b, c, 'T', 'N', 1.0d0, 0.0d0)
-         call linalg%gemm(c, a, b, 'N', 'N', 1.0d0, 0.0d0)
+         call linalg%gemm(a, b, c, 'T', 'N', 1.0_rk, 0.0_rk)
+         call linalg%gemm(c, a, b, 'N', 'N', 1.0_rk, 0.0_rk)
       elseif(itype==2)then
-         call linalg%gemm(a, b, c, 'N', 'N', 1.0d0, 0.0d0)
-         call linalg%gemm(c, a, b, 'N', 'T', 1.0d0, 0.0d0)
+         call linalg%gemm(a, b, c, 'N', 'N', 1.0_rk, 0.0_rk)
+         call linalg%gemm(c, a, b, 'N', 'T', 1.0_rk, 0.0_rk)
       else
          error stop "[Linalg Error]:Illegal itype, itype must be 1 or 2"
       end if

@@ -75,6 +75,7 @@ contains
       complex(8),intent(inout) :: a(:,:)
       integer::n,i
       n=size(a,1)
+      a=0.d0
       do i=1,n
          a(i,i)=1.d0
       end do
@@ -84,6 +85,7 @@ contains
       real(8),intent(inout) :: a(:,:)
       integer::n,i
       n=size(a,1)
+      a=0.d0
       do i=1,n
          a(i,i)=1.d0
       end do

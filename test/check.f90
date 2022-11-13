@@ -1,5 +1,5 @@
 program check
-   use iso_linalg_mod
+   use linalg_fortran
    real(8)::a(3,3)
    call random_number(a)
    if(linalg%inv(a))then

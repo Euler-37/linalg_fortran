@@ -1,7 +1,7 @@
-# iso_linalg_mod
+# linalg
 linalg :Fortran lapack interface 
 
-- type:`complex(8)` and `real(8)`
+- type:`complex(8)` , `real(8)`,` complex)4)` , `real(4)`
 
 | name    | Class        | Description                                                |
 |   :-:   |   :-:        |:-:                                                         |

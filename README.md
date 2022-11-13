@@ -1,7 +1,7 @@
 # linalg
 linalg :Fortran lapack interface 
 
-- type:`complex(8)` , `real(8)`,` complex)4)` , `real(4)`
+- type:`complex(8)` , `real(8)`,` complex(8)` , `real(4)`
 
 | name    | Class        | Description                                                |
 |   :-:   |   :-:        |:-:                                                         |
@@ -16,7 +16,7 @@ linalg :Fortran lapack interface
 
 ```fortran
 program check
-   use iso_linalg_mod
+   use linalg_fortran
    real(8)::a(3,3)
    call random_number(a)
    if(linalg%inv(a))then

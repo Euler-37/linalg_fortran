@@ -72,27 +72,46 @@ contains
 
    subroutine print_c8(a,name)
       !! Print Matrix A
-      complex(r8),intent(in) :: a(:,:)
+      complex(r8),intent(in) :: a(..)
       character(len=*),intent(in)::name
       integer::n,i
+      select rank(a)
+      rank(2)
       write(*,"(3A)")"matrix ",name,"="
       n=size(a,1)
       do i=1,n
          write(*,"(*(F10.4,'+',F10.4,'i'))")a(i,:)
       end do
+      rank(1)
+         write(*,"(3A)")"vector ",name,"="
+         write(*,"(*(F10.4,'+',F10.4,'i'))")a
+      rank(0)
+         write(*,"(3A)")"num ",name,"="
+         write(*,"(*(F10.4,'+',F10.4,'i'))")a
+      end select
    end subroutine print_c8
 
    subroutine print_r8(a,name)
       !! Print Matrix A
-      real(r8),intent(in) :: a(:,:)
+      real(r8),intent(in) :: a(..)
       character(len=*),intent(in)::name
       integer::n,i
-      write(*,"(3A)")"matrix ",name,"="
-      n=size(a,1)
-      do i=1,n
-         write(*,"(*(F10.4))")a(i,:)
-      end do
+      select rank(a)
+      rank(2)
+         write(*,"(3A)")"matrix ",name,"="
+         n=size(a,1)
+         do i=1,n
+            write(*,"(*(F10.4))")a(i,:)
+         end do
+      rank(1)
+         write(*,"(3A)")"vector ",name,"="
+         write(*,"(F10.4)")a
+      rank(0)
+         write(*,"(3A)")"num ",name,"="
+         write(*,"(F10.4)")a
+      end select
    end subroutine print_r8
+
 
    subroutine eye_c8(a)
       !! Eye Matrix
@@ -216,11 +235,13 @@ contains
       complex(r8),allocatable   :: work(:)
       real(r8),allocatable      :: rwork(:)
       integer                  :: iflag
-      integer::n
+      integer::n,nb
+      integer,external::ilaenv
       n=size(a,1)
-      allocate(work(5*n*n))
+      nb = ilaenv( 1, "zhetrd", "U", n, -1, -1, -1 )
+      allocate(work(nb*n))
       allocate(rwork(3*n-2))
-      call zheev("V","U",n,a,n,e,work,5*n*n,rwork,iflag)
+      call zheev("V","U",n,a,n,e,work,nb*n,rwork,iflag)
       deallocate(work)
       deallocate(rwork)
    end subroutine eigh_c8
@@ -230,10 +251,12 @@ contains
       real(r8),intent(out)   :: e(:)
       real(r8),allocatable   :: work(:)
       integer               :: iflag
-      integer::n
+      integer::n,nb
+      integer,external::ilaenv
       n=size(a,1)
-      allocate(work(5*n*n))
-      call dsyev("V","U",n,a,n,e,work,5*n*n,iflag)
+      nb = ilaenv( 1, "dsytrd", "U", n, -1, -1, -1 )
+      allocate(work(n*nb))
+      call dsyev("V","U",n,a,n,e,work,nb*n,iflag)
       deallocate(work)
    end subroutine eigh_r8
 
@@ -346,26 +369,44 @@ contains
 
    subroutine print_c4(a,name)
       !! Print Matrix A
-      complex(r4),intent(in) :: a(:,:)
+      complex(r4),intent(in) :: a(..)
       character(len=*),intent(in)::name
       integer::n,i
+      select rank(a)
+      rank(2)
       write(*,"(3A)")"matrix ",name,"="
       n=size(a,1)
       do i=1,n
          write(*,"(*(F10.4,'+',F10.4,'i'))")a(i,:)
       end do
+      rank(1)
+         write(*,"(3A)")"vector ",name,"="
+         write(*,"(*(F10.4,'+',F10.4,'i'))")a
+      rank(0)
+         write(*,"(3A)")"num ",name,"="
+         write(*,"(*(F10.4,'+',F10.4,'i'))")a
+      end select
    end subroutine print_c4
 
    subroutine print_r4(a,name)
       !! Print Matrix A
-      real(r4),intent(in) :: a(:,:)
+      real(r4),intent(in) :: a(..)
       character(len=*),intent(in)::name
       integer::n,i
-      write(*,"(3A)")"matrix ",name,"="
-      n=size(a,1)
-      do i=1,n
-         write(*,"(*(F10.4))")a(i,:)
-      end do
+      select rank(a)
+      rank(2)
+         write(*,"(3A)")"matrix ",name,"="
+         n=size(a,1)
+         do i=1,n
+            write(*,"(*(F10.4))")a(i,:)
+         end do
+      rank(1)
+         write(*,"(3A)")"vector ",name,"="
+         write(*,"(F10.4)")a
+      rank(0)
+         write(*,"(3A)")"num ",name,"="
+         write(*,"(F10.4)")a
+      end select
    end subroutine print_r4
 
    subroutine eye_c4(a)
@@ -490,11 +531,13 @@ contains
       complex(r4),allocatable   :: work(:)
       real(r4),allocatable      :: rwork(:)
       integer                  :: iflag
-      integer::n
+      integer::n,nb
+      integer,external::ilaenv
       n=size(a,1)
-      allocate(work(5*n*n))
+      nb = ilaenv( 1, "chetrd", "U", n, -1, -1, -1 )
+      allocate(work(nb*n))
       allocate(rwork(3*n-2))
-      call cheev("V","U",n,a,n,e,work,5*n*n,rwork,iflag)
+      call cheev("V","U",n,a,n,e,work,nb*n,rwork,iflag)
       deallocate(work)
       deallocate(rwork)
    end subroutine eigh_c4
@@ -504,10 +547,12 @@ contains
       real(r4),intent(out)   :: e(:)
       real(r4),allocatable   :: work(:)
       integer               :: iflag
-      integer::n
+      integer::n,nb
+      integer,external::ilaenv
       n=size(a,1)
-      allocate(work(5*n*n))
-      call ssyev("V","U",n,a,n,e,work,5*n*n,iflag)
+      nb = ilaenv( 1, "ssytrd", "U", n, -1, -1, -1 )
+      allocate(work(nb*n))
+      call ssyev("V","U",n,a,n,e,work,nb*n,iflag)
       deallocate(work)
    end subroutine eigh_r4
 

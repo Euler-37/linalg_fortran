@@ -205,7 +205,7 @@ contains
       deallocate(ipiv)
       deallocate(tmpa)
    end function det_c8
-   complex(r8) function det_r8(a)result(res)
+   real(r8) function det_r8(a)result(res)
       !! Determinant of matrix a
       real(r8),intent(in) :: a(:,:)
       integer               :: info
@@ -501,7 +501,7 @@ contains
       deallocate(ipiv)
       deallocate(tmpa)
    end function det_c4
-   complex(r4) function det_r4(a)result(res)
+   real(r4) function det_r4(a)result(res)
       !! Determinant of matrix a
       real(r4),intent(in) :: a(:,:)
       integer               :: info

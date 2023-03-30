@@ -1,0 +1,8 @@
+#:mute
+#:set REAL_KINDS = ["r4", "r8"]
+#:set REAL_TYPES = ["real({})".format(k) for k in REAL_KINDS]
+#:set CMPLX_KINDS = ["c4", "c8"]
+#:set CMPLX_TYPES = ["complex({})".format(k) for k in REAL_KINDS]
+#:set REAL_KINDS_TYPES = list(zip(REAL_KINDS, REAL_TYPES))
+#:set CMPLX_KINDS_TYPES = list(zip(CMPLX_KINDS, CMPLX_TYPES))
+#:endmute

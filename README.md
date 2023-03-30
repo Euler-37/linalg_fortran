@@ -1,7 +1,7 @@
 # linalg
 linalg :Fortran lapack interface 
 
-- type:`complex(8)` , `real(8)`,` complex(8)` , `real(4)`
+- type:`complex(8)` , `real(8)`,` complex(4)` , `real(4)`
 
 | name    | Class        | Description                                                |
 |   :-:   |   :-:        |:-:                                                         |
@@ -9,6 +9,7 @@ linalg :Fortran lapack interface
 | `det`   | `function`   | Determinant of Matrix                                      |
 | `eigh`  | `subroutine` | eigenvalues and eigenvectors for Symmetry/Hermitian Matrix |
 | `gemm`  | `subroutine` | gemm                                                       |
+| `gemv`  | `subroutine` | gemv                                                       |
 | `eye`   | `subroutine` | eye                                                        |
 | `print` | `subroutine` | print matrix                                               |
 | `geut`  | `subroutine` | $U^{\dagger}AU$ or $UAU^{\dagger}$                         |

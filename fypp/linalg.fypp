@@ -1,0 +1,345 @@
+#:include "head.fypp"
+#:include "lapack.fypp"
+#:set CR_KINDS_TYPES = REAL_KINDS_TYPES+CMPLX_KINDS_TYPES
+#:set CR_KINDS = REAL_KINDS+CMPLX_KINDS
+#:def gname1(A)
+      generic::${A}$=>${A}$_r4,${A}$_r8,${A}$_c4,${A}$_c8
+#:enddef gname1
+#:def gname2(A,B)
+      generic::${A}$=>${A}$_r4,${A}$_r8,${A}$_c4,${A}$_c8,&
+                     &${B}$_r4,${B}$_r8,${B}$_c4,${B}$_c8
+#:enddef gname2
+#:def gname3(A,B,C)
+      generic::${A}$=>${A}$_r4,${A}$_r8,${A}$_c4,${A}$_c8,&
+                     &${B}$_r4,${B}$_r8,${B}$_c4,${B}$_c8,&
+                     &${C}$_r4,${C}$_r8,${C}$_c4,${C}$_c8
+#:enddef gname3
+module linalg_fortran
+   use iso_fortran_env,only:r8=>real64,r4=>real32
+   implicit none
+   private
+   type::linalg_t
+   contains
+      $:gname3("print","print_vec","print_num")
+      $:gname1("equal")
+      $:gname1("eye")
+      $:gname1("inv")
+      $:gname1("det")
+      $:gname1("gemm")
+      $:gname1("gemv")
+      $:gname1("geut")
+      $:gname1("eigh")
+   #:for k1 in CR_KINDS
+      procedure,private,nopass::print_${k1}$
+      procedure,private,nopass::print_vec_${k1}$
+      procedure,private,nopass::print_num_${k1}$
+      procedure,private,nopass::equal_${k1}$
+      procedure,private,nopass::eye_${k1}$
+      procedure,private,nopass::inv_${k1}$
+      procedure,private,nopass::det_${k1}$
+      procedure,private,nopass::gemm_${k1}$
+      procedure,private,nopass::gemv_${k1}$
+      procedure,private,nopass::geut_${k1}$
+      procedure,private,nopass::eigh_${k1}$
+   #:endfor
+   end type linalg_t
+   character(len=30)::format_c8="(*(F10.4,'+',F10.4,'i',:,','))"
+   character(len=30)::format_c4="(*(F10.4,'+',F10.4,'i',:,','))"
+   character(len=30)::format_r8="(*(F10.4,:,','))"
+   character(len=30)::format_r4="(*(F10.4,:,','))"
+   type(linalg_t),public::linalg
+   complex(r8),parameter::one_c8 =cmplx(1.0_r8,0.0_r8,r8)
+   complex(r4),parameter::one_c4 =cmplx(1.0_r4,0.0_r4,r4)
+   real(r8)   ,parameter::one_r8 =1.0_r8
+   real(r4)   ,parameter::one_r4 =1.0_r4
+   complex(r8),parameter::zero_c8=cmplx(0.0_r8,0.0_r8,r8)
+   complex(r4),parameter::zero_c4=cmplx(0.0_r4,0.0_r4,r4)
+   real(r8)   ,parameter::zero_r8=0.0_r8
+   real(r4)   ,parameter::zero_r4=0.0_r4
+   real(r8)   ,parameter::eps_r8 =1.0e-12_r8
+   real(r4)   ,parameter::eps_r4 =1.0e-6_r4
+   real(r8)   ,parameter::eps_c8 =1.0e-12_r8
+   real(r4)   ,parameter::eps_c4 =1.0e-6_r4
+   interface optval
+      #:for k1 in CR_KINDS
+      module procedure  optval_${k1}$
+      #:endfor
+      module procedure  optval_char
+      module procedure  optval_int
+   end interface
+contains
+   #:for k1,t1 in CR_KINDS_TYPES
+   ${t1}$ function optval_${k1}$(a,default)result(res)
+      ${t1}$,intent(in),optional::a
+      ${t1}$,intent(in)::default
+      if(present(a))then
+         res=a
+      else
+         res=default
+      end if
+   end function optval_${k1}$
+
+   #:endfor
+   character function optval_char(a,default)result(res)
+      character,intent(in),optional::a
+      character,intent(in)::default
+      if(present(a))then
+         res=a
+      else
+         res=default
+      end if
+   end function optval_char
+
+   integer function optval_int(a,default)result(res)
+      integer,intent(in),optional::a
+      integer,intent(in)::default
+      if(present(a))then
+         res=a
+      else
+         res=default
+      end if
+   end function optval_int
+   
+   #:for k1,t1 in CR_KINDS_TYPES
+   subroutine print_${k1}$(a,name)
+      !> Print vector/Matrix 
+      ${t1}$,intent(in)::a(:,:)
+      character(len=*),intent(in)::name
+      integer::n,i
+      write(*,"(3A)")"matrix ",name,"="
+      n=size(a,1)
+      do i=1,n
+         write(*,format_${k1}$)a(i,:)
+      end do
+   end subroutine print_${k1}$
+
+   subroutine print_vec_${k1}$(a,name)
+      !> Print vector/Matrix 
+      ${t1}$,intent(in)::a(:)
+      character(len=*),intent(in)::name
+      write(*,"(3A)")"vector ",name,"="
+      write(*,format_${k1}$)a
+   end subroutine print_vec_${k1}$
+
+   subroutine print_num_${k1}$(a,name)
+      !> Print vector/Matrix 
+      ${t1}$,intent(in)::a
+      character(len=*),intent(in)::name
+      write(*,"(3A)")"num ",name,"="
+      write(*,format_${k1}$)a
+   end subroutine print_num_${k1}$
+
+   logical function equal_${k1}$(a,b)result(res)
+      !> If Matrix A = B
+      ${t1}$,intent(in)::a(:,:)
+      ${t1}$,intent(in)::b(:,:)
+      res=all(abs(a-b)<eps_${k1}$)
+   end function equal_${k1}$
+
+   subroutine eye_${k1}$(a)
+      !> Eye Matrix
+      ${t1}$,intent(inout) :: a(:,:)
+      integer::n,i
+      n=size(a,1)
+      a=zero_${k1}$
+      do i=1,n
+         a(i,i)=one_${k1}$
+      end do
+   end subroutine eye_${k1}$
+
+   logical function inv_${k1}$(a)result(res)
+      !! inverse of matrix a
+      ${t1}$,intent(inout) :: a(:,:)
+      integer                  :: info
+      integer,allocatable      :: ipiv(:)
+      ${t1}$,allocatable       :: work(:)
+      integer::n,i
+      n=size(a,1)
+      allocate(ipiv(n))
+      call ${GETRF[k1]}$(n,n,a,n,ipiv,info)
+      res=(info==0)
+      if(.not.res)return
+      do i=1,n
+         if(abs(a(i,i))<eps_${k1}$)then
+            res=.false.
+            return
+         end if
+      end do
+      allocate(work(n))
+      call ${GETRI[k1]}$(n,a,n,ipiv,work,n,info)
+      res=(info==0)
+      deallocate(work)
+      deallocate(ipiv)
+   end function inv_${k1}$
+
+   ${t1}$ function det_${k1}$(a)result(res)
+      !! Determinant of matrix a
+      ${t1}$,intent(in)    :: a(:,:)
+      integer                  :: info
+      integer,allocatable      :: ipiv(:)
+      integer::n,i
+      ${t1}$,allocatable:: tmpa(:,:)
+      n=size(a,1)
+      select case(n)
+      case(2)
+         res=a(1,1)*a(2,2)-a(1,2)*a(2,1)
+      case(3)
+         res=a(1,1)*(a(2,2)*a(3,3)-a(2,3)*a(3,2))+&
+            &a(1,2)*(a(2,3)*a(3,1)-a(2,1)*a(3,3))+&
+            &a(1,3)*(a(2,1)*a(3,2)-a(2,2)*a(3,1))
+      case(4)
+         block
+            ${t1}$::b(6)
+            b(1)=a(3,1)*a(4,2)-a(3,2)*a(4,1)
+            b(2)=a(3,1)*a(4,3)-a(3,3)*a(4,1)
+            b(3)=a(3,1)*a(4,4)-a(3,4)*a(4,1)
+            b(4)=a(3,2)*a(4,3)-a(3,3)*a(4,2)
+            b(5)=a(3,2)*a(4,4)-a(3,4)*a(4,2)
+            b(6)=a(3,3)*a(4,4)-a(3,4)*a(4,3)
+            res= a(1,1)*( a(2,2)*b(6)-a(2,3)*b(5)+a(2,4)*b(4))+&
+               &a(1,2)*(-a(2,1)*b(6)+a(2,3)*b(3)-a(2,4)*b(2))+&
+               &a(1,3)*( a(2,1)*b(5)-a(2,2)*b(3)+a(2,4)*b(1))+&
+               &a(1,4)*(-a(2,1)*b(4)+a(2,2)*b(2)-a(2,3)*b(1))
+         end block
+      case default
+         allocate(tmpa,source=a)
+         allocate(ipiv(n))
+         call ${GETRF[k1]}$(n,n,tmpa,n,ipiv,info)
+         if(info/=0)then
+            res=zero_${k1}$
+         else
+            res=one_${k1}$
+            do i=1,n
+            res=res*tmpa(i,i)*merge(1,-1,ipiv(i)==i)
+            end do
+         end if
+         deallocate(ipiv)
+         deallocate(tmpa)
+      end select
+   end function det_${k1}$
+
+   subroutine gemm_${k1}$(a,b,c,transa,transb,alpha,beta)
+      !! fortran77 call:
+      !! zgemm(transa,transb,m,n,k,alpha,a,lda,b,ldb,beta,c,ldc)
+      !! transa='n','c','t'
+      !! transb='n','c','t'
+      implicit none
+      character(len=1), intent(in),optional:: transa
+      character(len=1), intent(in),optional:: transb
+      ${t1}$, intent(in),optional:: alpha
+      ${t1}$, intent(in),optional:: beta
+      ${t1}$, intent(in) :: a(:,:)
+      ${t1}$, intent(in) :: b(:,:)
+      ${t1}$, intent(inout) :: c(:,:)
+      integer :: m,n,k,lda,ldb,ldc
+      character(len=1):: transa_
+      character(len=1):: transb_
+      ${t1}$:: alpha_
+      ${t1}$:: beta_
+      transa_=optval(transa,"N")
+      transb_=optval(transb,"N")
+      alpha_ =optval(alpha,one_${k1}$)
+      beta_  =optval(beta ,zero_${k1}$)
+      if(transa_=='n'.or.transa_=='N') then
+         k = size(a,2)
+      else
+         k = size(a,1)
+      endif
+      lda = size(a,1)
+      ldb = size(b,1)
+      ldc = size(c,1)
+      m   = size(c,1)
+      n   = size(c,2)
+      ! <<< call blas77 routine >>>
+      call ${GEMM[k1]}$(transa_,transb_,m,n,k,alpha_,a,lda,b,ldb,beta_,c,ldc)
+   end subroutine gemm_${k1}$
+
+   subroutine gemv_${k1}$(a,x,y,trans,alpha,beta)
+      ! fortran77 call:
+      ! zgemv(trans,m,n,alpha,a,lda,x,incx,beta,y,incy)
+      ! trans='n','c','t'; default: 'n'
+      ! default alpha=1
+      ! default beta=0
+      ! <<< scalar arguments >>>
+      ${t1}$, intent(in),optional:: alpha
+      ${t1}$, intent(in),optional:: beta
+      character(len=1), intent(in),optional:: trans
+      ! <<< array arguments >>>
+      ${t1}$, intent(in) :: a(:,:)
+      ${t1}$, intent(in) :: x(:)
+      ${t1}$, intent(inout) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      character(len=1):: trans_
+      ${t1}$:: alpha_
+      ${t1}$:: beta_
+      ! <<< intrinsic functions >>>
+      trans_ =optval(trans,"N")
+      alpha_ =optval(alpha,one_${k1}$)
+      beta_  =optval(beta ,zero_${k1}$)
+
+      incx = 1
+      incy = 1
+      lda = size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call ${GEMV[k1]}$(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
+   end subroutine gemv_${k1}$
+
+   subroutine geut_${k1}$(a,b,itype)
+      !! itypes 1 : B = A^{+} B A
+      !! itypes 2 : B = A  B A^{+}
+      integer,intent(in),optional::itype
+      ${t1}$,intent(in)::a(:,:)
+      ${t1}$,intent(inout)::b(:,:)
+      ${t1}$,allocatable::c(:,:)
+      integer::itype_
+      allocate(c,mold=a)
+      itype_=optval(itype,1)
+      if(itype_==1)then
+         call linalg%gemm(a, b, c, transa='C')
+         call linalg%gemm(c, a, b)
+      elseif(itype_==2)then
+         call linalg%gemm(a, b, c)
+         call linalg%gemm(c, a, b, transb="C")
+      else
+         error stop "[Linalg Error]:Illegal itype, itype must be 1 or 2"
+      end if
+   end subroutine geut_${k1}$
+
+   subroutine eigh_${k1}$(a,e,uplo)
+      !! call zheev "V","U"
+      character,intent(in),optional::uplo
+      ${t1}$,intent(inout) :: a(:,:)
+      ${t1}$,allocatable   :: work(:)
+      #:set KD="r4"
+      #:if k1 == "c8" or k1 == "r8"
+      #:set KD='r8'
+      #:endif
+      real(${KD}$),intent(out)      :: e(:)
+      #:if k1 == "c8" or k1 == "c4"
+      real(${KD}$),allocatable      :: rwork(:)
+      #:endif
+      integer                  :: iflag
+      integer::n,nb
+      integer,external::ilaenv
+      character::uplo_
+      n=size(a,1)
+      uplo_=optval(uplo,"U")
+      nb = ilaenv( 1, "${TRD[k1]}$", uplo_, n, -1, -1, -1 )
+      allocate(work(nb*n))
+      #:if k1 == "c8" or k1 == "c4"
+      allocate(rwork(3*n-2))
+      call ${EIGH[k1]}$("V",uplo_,n,a,n,e,work,nb*n,rwork,iflag)
+      deallocate(rwork)
+      #:else
+      call ${EIGH[k1]}$("V",uplo_,n,a,n,e,work,nb*n,iflag)
+      #:endif
+      deallocate(work)
+   end subroutine eigh_${k1}$
+
+   #:endfor
+end module linalg_fortran

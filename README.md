@@ -1,5 +1,5 @@
 # linalg
-linalg :Fortran lapack interface 
+## linalg :Fortran lapack interface 
 
 - type:`complex(8)` , `real(8)`,` complex(4)` , `real(4)`
 

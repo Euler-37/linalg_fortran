@@ -1,0 +1,6 @@
+#:set GETRF={"c8" : "zgetrf" , "r8" : "dgetrf" , "c4" : "cgetrf" , "r4" : "sgetrf"}
+#:set GETRI={"c8" : "zgetri" , "r8" : "dgetri" , "c4" : "cgetri" , "r4" : "sgetri"}
+#:set GEMM ={"c8" : "zgemm"  , "r8" : "dgemm"  , "c4" : "cgemm"  , "r4" : "sgemm" }
+#:set GEMV ={"c8" : "zgemv"  , "r8" : "dgemv"  , "c4" : "cgemv"  , "r4" : "sgemv" }
+#:set EIGH ={"c8" : "zheev"  , "r8" : "dsyev"  , "c4" : "cheev"  , "r4" : "ssyev" }
+#:set TRD  ={"c8" : "zhetrd" , "r8" : "dsytrd" , "c4" : "chetrd" , "r4" : "ssytrd"}

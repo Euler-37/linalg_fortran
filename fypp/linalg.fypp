@@ -27,9 +27,11 @@ module linalg_fortran
       $:gname1("det")
       $:gname1("gemm")
       $:gname1("gemv")
+      $:gname1("ger")
       $:gname1("geut")
       $:gname1("eigh")
    #:for k1 in CR_KINDS
+      procedure,public ,nopass::${DOT[k1]}$
       procedure,private,nopass::print_${k1}$
       procedure,private,nopass::print_vec_${k1}$
       procedure,private,nopass::print_num_${k1}$
@@ -41,6 +43,7 @@ module linalg_fortran
       procedure,private,nopass::gemv_${k1}$
       procedure,private,nopass::geut_${k1}$
       procedure,private,nopass::eigh_${k1}$
+      procedure,private,nopass::ger_${k1}$
    #:endfor
    end type linalg_t
    character(len=30)::format_c8="(*(F10.4,'+',F10.4,'i',:,','))"
@@ -66,6 +69,19 @@ module linalg_fortran
       #:endfor
       module procedure  optval_char
       module procedure  optval_int
+   end interface
+   interface
+      #:for k1,t1 in CR_KINDS_TYPES
+      ${t1}$ function ${DOT[k1]}$(n,a,idx,b,idy)
+         import::r4,r8
+         integer,intent(in)::n
+         integer,intent(in)::idx
+         integer,intent(in)::idy
+         ${t1}$,intent(in)::a(*)
+         ${t1}$,intent(in)::b(*)
+      end function ${DOT[k1]}$
+
+      #:endfor
    end interface
 contains
    #:for k1,t1 in CR_KINDS_TYPES
@@ -289,6 +305,26 @@ contains
       call ${GEMV[k1]}$(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
    end subroutine gemv_${k1}$
 
+   subroutine ger_${k1}$(a,x,y,alpha)
+      ${t1}$, intent(in), optional :: alpha
+      ${t1}$, intent(inout) :: a(:,:)
+      ${t1}$, intent(in) :: x(:)
+      ${t1}$, intent(in) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      ${t1}$  :: alpha_
+      alpha_=optval(alpha,one_${k1}$)
+      incx = 1
+      incy = 1
+      lda =size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call ${GER[k1]}$(m,n,alpha_,x,incx,y,incy,a,lda)
+   end subroutine ger_${k1}$
+
    subroutine geut_${k1}$(a,b,itype)
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
@@ -329,7 +365,7 @@ contains
       character::uplo_
       n=size(a,1)
       uplo_=optval(uplo,"U")
-      nb = ilaenv( 1, "${TRD[k1]}$", uplo_, n, -1, -1, -1 )
+      nb = ilaenv( 1, "${TRD[k1]}$", uplo_, n, -1, -1, -1 )+2
       allocate(work(nb*n))
       #:if k1 == "c8" or k1 == "c4"
       allocate(rwork(3*n-2))

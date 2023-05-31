@@ -13,8 +13,10 @@ module linalg_fortran
       generic::det=>det_r4,det_r8,det_c4,det_c8
       generic::gemm=>gemm_r4,gemm_r8,gemm_c4,gemm_c8
       generic::gemv=>gemv_r4,gemv_r8,gemv_c4,gemv_c8
+      generic::ger=>ger_r4,ger_r8,ger_c4,ger_c8
       generic::geut=>geut_r4,geut_r8,geut_c4,geut_c8
       generic::eigh=>eigh_r4,eigh_r8,eigh_c4,eigh_c8
+      procedure,public ,nopass::sdot
       procedure,private,nopass::print_r4
       procedure,private,nopass::print_vec_r4
       procedure,private,nopass::print_num_r4
@@ -26,6 +28,8 @@ module linalg_fortran
       procedure,private,nopass::gemv_r4
       procedure,private,nopass::geut_r4
       procedure,private,nopass::eigh_r4
+      procedure,private,nopass::ger_r4
+      procedure,public ,nopass::ddot
       procedure,private,nopass::print_r8
       procedure,private,nopass::print_vec_r8
       procedure,private,nopass::print_num_r8
@@ -37,6 +41,8 @@ module linalg_fortran
       procedure,private,nopass::gemv_r8
       procedure,private,nopass::geut_r8
       procedure,private,nopass::eigh_r8
+      procedure,private,nopass::ger_r8
+      procedure,public ,nopass::cdotu
       procedure,private,nopass::print_c4
       procedure,private,nopass::print_vec_c4
       procedure,private,nopass::print_num_c4
@@ -48,6 +54,8 @@ module linalg_fortran
       procedure,private,nopass::gemv_c4
       procedure,private,nopass::geut_c4
       procedure,private,nopass::eigh_c4
+      procedure,private,nopass::ger_c4
+      procedure,public ,nopass::zdotu
       procedure,private,nopass::print_c8
       procedure,private,nopass::print_vec_c8
       procedure,private,nopass::print_num_c8
@@ -59,6 +67,7 @@ module linalg_fortran
       procedure,private,nopass::gemv_c8
       procedure,private,nopass::geut_c8
       procedure,private,nopass::eigh_c8
+      procedure,private,nopass::ger_c8
    end type linalg_t
    character(len=30)::format_c8="(*(F10.4,'+',F10.4,'i',:,','))"
    character(len=30)::format_c4="(*(F10.4,'+',F10.4,'i',:,','))"
@@ -84,6 +93,44 @@ module linalg_fortran
       module procedure  optval_c8
       module procedure  optval_char
       module procedure  optval_int
+   end interface
+   interface
+      real(r4) function sdot(n,a,idx,b,idy)
+         import::r4,r8
+         integer,intent(in)::n
+         integer,intent(in)::idx
+         integer,intent(in)::idy
+         real(r4),intent(in)::a(*)
+         real(r4),intent(in)::b(*)
+      end function sdot
+
+      real(r8) function ddot(n,a,idx,b,idy)
+         import::r4,r8
+         integer,intent(in)::n
+         integer,intent(in)::idx
+         integer,intent(in)::idy
+         real(r8),intent(in)::a(*)
+         real(r8),intent(in)::b(*)
+      end function ddot
+
+      complex(r4) function cdotu(n,a,idx,b,idy)
+         import::r4,r8
+         integer,intent(in)::n
+         integer,intent(in)::idx
+         integer,intent(in)::idy
+         complex(r4),intent(in)::a(*)
+         complex(r4),intent(in)::b(*)
+      end function cdotu
+
+      complex(r8) function zdotu(n,a,idx,b,idy)
+         import::r4,r8
+         integer,intent(in)::n
+         integer,intent(in)::idx
+         integer,intent(in)::idy
+         complex(r8),intent(in)::a(*)
+         complex(r8),intent(in)::b(*)
+      end function zdotu
+
    end interface
 contains
    real(r4) function optval_r4(a,default)result(res)
@@ -334,6 +381,26 @@ contains
       call sgemv(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
    end subroutine gemv_r4
 
+   subroutine ger_r4(a,x,y,alpha)
+      real(r4), intent(in), optional :: alpha
+      real(r4), intent(inout) :: a(:,:)
+      real(r4), intent(in) :: x(:)
+      real(r4), intent(in) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      real(r4)  :: alpha_
+      alpha_=optval(alpha,one_r4)
+      incx = 1
+      incy = 1
+      lda =size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call sger(m,n,alpha_,x,incx,y,incy,a,lda)
+   end subroutine ger_r4
+
    subroutine geut_r4(a,b,itype)
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
@@ -367,7 +434,7 @@ contains
       character::uplo_
       n=size(a,1)
       uplo_=optval(uplo,"U")
-      nb = ilaenv( 1, "ssytrd", uplo_, n, -1, -1, -1 )
+      nb = ilaenv( 1, "ssytrd", uplo_, n, -1, -1, -1 )+2
       allocate(work(nb*n))
       call ssyev("V",uplo_,n,a,n,e,work,nb*n,iflag)
       deallocate(work)
@@ -561,6 +628,26 @@ contains
       call dgemv(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
    end subroutine gemv_r8
 
+   subroutine ger_r8(a,x,y,alpha)
+      real(r8), intent(in), optional :: alpha
+      real(r8), intent(inout) :: a(:,:)
+      real(r8), intent(in) :: x(:)
+      real(r8), intent(in) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      real(r8)  :: alpha_
+      alpha_=optval(alpha,one_r8)
+      incx = 1
+      incy = 1
+      lda =size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call dger(m,n,alpha_,x,incx,y,incy,a,lda)
+   end subroutine ger_r8
+
    subroutine geut_r8(a,b,itype)
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
@@ -594,7 +681,7 @@ contains
       character::uplo_
       n=size(a,1)
       uplo_=optval(uplo,"U")
-      nb = ilaenv( 1, "dsytrd", uplo_, n, -1, -1, -1 )
+      nb = ilaenv( 1, "dsytrd", uplo_, n, -1, -1, -1 )+2
       allocate(work(nb*n))
       call dsyev("V",uplo_,n,a,n,e,work,nb*n,iflag)
       deallocate(work)
@@ -788,6 +875,26 @@ contains
       call cgemv(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
    end subroutine gemv_c4
 
+   subroutine ger_c4(a,x,y,alpha)
+      complex(r4), intent(in), optional :: alpha
+      complex(r4), intent(inout) :: a(:,:)
+      complex(r4), intent(in) :: x(:)
+      complex(r4), intent(in) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      complex(r4)  :: alpha_
+      alpha_=optval(alpha,one_c4)
+      incx = 1
+      incy = 1
+      lda =size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call cgeru(m,n,alpha_,x,incx,y,incy,a,lda)
+   end subroutine ger_c4
+
    subroutine geut_c4(a,b,itype)
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
@@ -822,7 +929,7 @@ contains
       character::uplo_
       n=size(a,1)
       uplo_=optval(uplo,"U")
-      nb = ilaenv( 1, "chetrd", uplo_, n, -1, -1, -1 )
+      nb = ilaenv( 1, "chetrd", uplo_, n, -1, -1, -1 )+2
       allocate(work(nb*n))
       allocate(rwork(3*n-2))
       call cheev("V",uplo_,n,a,n,e,work,nb*n,rwork,iflag)
@@ -1018,6 +1125,26 @@ contains
       call zgemv(trans_,m,n,alpha_,a,lda,x,incx,beta_,y,incy)
    end subroutine gemv_c8
 
+   subroutine ger_c8(a,x,y,alpha)
+      complex(r8), intent(in), optional :: alpha
+      complex(r8), intent(inout) :: a(:,:)
+      complex(r8), intent(in) :: x(:)
+      complex(r8), intent(in) :: y(:)
+      integer :: incx
+      integer :: incy
+      integer :: m
+      integer :: n
+      integer :: lda
+      complex(r8)  :: alpha_
+      alpha_=optval(alpha,one_c8)
+      incx = 1
+      incy = 1
+      lda =size(a,1)
+      m = size(a,1)
+      n = size(a,2)
+      call zgeru(m,n,alpha_,x,incx,y,incy,a,lda)
+   end subroutine ger_c8
+
    subroutine geut_c8(a,b,itype)
       !! itypes 1 : B = A^{+} B A
       !! itypes 2 : B = A  B A^{+}
@@ -1052,7 +1179,7 @@ contains
       character::uplo_
       n=size(a,1)
       uplo_=optval(uplo,"U")
-      nb = ilaenv( 1, "zhetrd", uplo_, n, -1, -1, -1 )
+      nb = ilaenv( 1, "zhetrd", uplo_, n, -1, -1, -1 )+2
       allocate(work(nb*n))
       allocate(rwork(3*n-2))
       call zheev("V",uplo_,n,a,n,e,work,nb*n,rwork,iflag)

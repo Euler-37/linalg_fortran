@@ -4,3 +4,6 @@
 #:set GEMV ={"c8" : "zgemv"  , "r8" : "dgemv"  , "c4" : "cgemv"  , "r4" : "sgemv" }
 #:set EIGH ={"c8" : "zheev"  , "r8" : "dsyev"  , "c4" : "cheev"  , "r4" : "ssyev" }
 #:set TRD  ={"c8" : "zhetrd" , "r8" : "dsytrd" , "c4" : "chetrd" , "r4" : "ssytrd"}
+#:set GER  ={"c8" : "zgeru"  , "r8" : "dger"   , "c4" : "cgeru"  , "r4" : "sger"  }
+#:set DOT  ={"c8" : "zdotu"  , "r8" : "ddot"   , "c4" : "cdotu"  , "r4" : "sdot"  }
+#:set COPY ={"c8" : "zcopy"  , "r8" : "dcopy"  , "c4" : "ccopy"  , "r4" : "scopy" }
